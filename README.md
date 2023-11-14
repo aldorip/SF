@@ -1,450 +1,340 @@
-# Configuração Padrão (Completa)
+# Django Autenticação (Simples)
 
-Esse é o padrão de configuração de projeto que utilizo.
+Nesse tutorial vou mostrar para vocês uma configuração simples de autenticação com Django. Vamos utilizar a biblioteca nativa do Django *contrib.auth.* Com base na documentação vamos fazer de maneira mais simples onde praticamente customizar os templates. Agora a views, urls, models será tudo padrão do Django. Essa configuração eu indico para projetos que não tem um foco complexo ou muita customização na parte de autenticação. 
 
-**Configurações Iniciais**
+Partindo desse repositório aqui: 
+[Configuração Default Simples](https://github.com/djangomy/config-default-simple)
 
-<details><summary><b>Ambiente Virtual Linux/Windows</b></summary>
+Vamos lá, 
 
-- **Ambiente Virtual Linux/Windows**
+Primeiro vamos fazer uma configuração no ***core/settings.py*** e adicionar o **EMAIL_BACKEND** do Django, para simular um envio de e-mail para reset de senha.
+
+`EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'`
+
+Documentação: 
+[https://docs.djangoproject.com/en/4.1/topics/auth/default/](https://docs.djangoproject.com/en/4.1/topics/auth/default/)
+[https://docs.djangoproject.com/en/4.1/topics/auth/customizing/](https://docs.djangoproject.com/en/4.1/topics/auth/customizing/)
+
+Vamos configurar a autenticação da maneira mais simples que conheço com Django.
+
+Então com base na documentação, vamos praticamente importar rotas ***“accounts”***  
+
+Primeiro vamos registrar essas urls no nosso projeto.
+
+```python
+urlpatterns = [
+		...
+    path("accounts/", include("django.contrib.auth.urls")),  # accounts
+]
+```
+
+Isso inclui todos esses padrões de URL.
+
+```
+accounts/login/ [name='login']
+accounts/logout/ [name='logout']
+accounts/password_change/ [name='password_change']
+accounts/password_change/done/ [name='password_change_done']
+accounts/password_reset/ [name='password_reset']
+accounts/password_reset/done/ [name='password_reset_done']
+accounts/reset/<uidb64>/<token>/ [name='password_reset_confirm']
+accounts/reset/done/ [name='password_reset_complete']
+```
+
+Com isso já conseguimos testar. Rode a aplicação e tenta acessar qualquer uma dessas rotas.
+
+Cada comportamento dessas Urls ira redirecionar para admin do django. Isso por que está utilizando o **template da view padrão do accounts**.
+
+```python
+# --- Login Logout User --- # 
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+```
+
+Mas podemos criar nosso template e customizar, de maneira simples. 
+
+Vamos criar um app novo para salvar esses templates de autenticação. 
+
+```python
+python manage.py startapp accounts
+```
+
+Agora precisamos registrar nossa aplicação. Tem que ser registrado em primeiro. Senão o Django busca o template padrão e não o que vamos criar.
+
+``` 
+INSTALLED_APPS = [ 
+    'accounts',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+     
+    'myapp',
+]
+``` 
+
+Dentro desse app criar uma pasta “**templates/registration**”
+
+- login.html
+- password_reset_complete.html
+- password_reset_confirm.html
+- password_reset_done.html
+- password_reset_form.html
+- register.html
+
+Criar todos esses templates. Tem que ser exatamente esses nomes.
+
+Se vocês acessar a views que chama esses templates padrão do django.
+`from django.contrib.auth import views`
+
+Verifica que na documentação a view está chamando **template_name.** 
+
+São exatamente esses nomes. E para aproveitar essa views que já existe do próprio Django vamos apenas apontar o template nosso.
+
+<details><summary><b>Login</b></summary>
+
+- **Login** 
+    ***accounts/templates/registration/login.html***
     
+    ```html
+    {% extends 'base.html' %}
     
-    Lembrando… Precisa ter Python instalado no seu ambiente.
+    {% block title %}Login{% endblock %}
     
-    **Criar o ambiente virtual Linux/Windows**
+    {% block content %}
     
-    ```python
-    ## Windows
-    python -m venv .venv
-    source .venv/Scripts/activate # Ativar ambiente
+    <div class="col-md-4">
+        <form method="post">
+            {% csrf_token %}
     
-    ## Linux 
-    ## Caso não tenha virtualenv. "pip install virtualenv"
-    virtualenv .venv
-    source .venv/bin/activate # Ativar ambiente
-    ```
+            <div class="mb-3">
+                <label class="form-label" for="id_username">Usuário:</label>
+                <input type="text" name="username" class="form-control">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label" for="id_password">Senha:</label>
+                <input type="password" name="password" class="form-control">
+            </div>
     
-    Instalar os seguintes pacotes.
+            <button class="btn btn-warning" type="submit">Entrar</button>
+        </form>
+        
+        <a href="{% url 'password_reset' %}">Esqueci minha senha</a>
+    </div>
     
-    ```python
-    pip install django
-    pip install pillow
-    ```
-    
-    Para criar o arquivo *requirements.txt*
-    
-    ```python
-    pip freeze > requirements.txt
+    {% endblock %}
     ```
 
 </details> 
 
-<details><summary><b>Criando o Projeto</b></summary> 
+<details><summary><b>Password Reset Form</b></summary>
 
-- **Criando o Projeto**
+- **Password Reset Form**
     
-    ## **Criando o projeto**
+    ***accounts/templates/registration/password_reset_form.html***
     
-    “core” é nome do seu projeto e quando colocamos um “.” depois do nome do projeto significa que é para criar os arquivos na raiz da pasta. Assim não cria subpasta do projeto.
+    ```html
+    {% extends 'base.html' %}
     
-    ```python
-    django-admin startproject core .
+    {% block title %}Resetar Senha{% endblock %}
+    
+    {% block content %}
+    <div class="col-md-4">
+    	<h1>Resetar Senha</h1>  
+            <form method="post">
+            {% csrf_token %}
+            <div class="mt-3">
+                <label class="form-label" for="id_email">Email:</label>
+                <input type="email" name="email" class="form-control" id="id_email">
+            </div>
+            <button class="btn btn-warning mt-3" type="submit">Resetar</button>
+        </form>
+    </div>
+    {% endblock %}
     ```
-    
-    **Testar a aplicação**
-    
-    ```python
-    python manage.py runserver
-    ``` 
 
 </details>
 
-<details><summary><b>Arquivos Static</b></summary>
+<details><summary><b>Password Reset Confirm</b></summary>
 
-- **Arquivos Static**
+- **Password Reset Confirm**
     
-    ## **Vamos configurar nossos arquivos** *static*
+    ***accounts/templates/registration/password_reset_confirm.html***
+    
+    ```html
+    {% extends 'base.html' %}
+    {% block title %}Formulário Reset Senha{% endblock %}
+    {% block content %}
+    <div class="col-md-4">
+        {% if validlink %}
+        <p>Entre com sua nova senha para resetar.</p>
+        <form action="" method="post">
+            {% csrf_token %}
+            <div class="mt-3">
+                {{ form.new_password1.errors }}
+                <label class="form-label" for="id_new_password1">Nova Senha:</label>
+                <input type="password" name="new_password1" class="form-control" id="id_new_password1"> 
+            </div>
+            <div class="mt-3">
+                {{ form.new_password2.errors }}
+                <label class="form-label" for="id_new_password2">Confirmação de senha:</label>
+                <input type="password" name="new_password2" class="form-control" id="id_new_password2"> 
+            </div>
+            <button type="submit" class="btn btn-warning mt-3">Alterar Senha</button>
+        </form>
+        {% else %}
+        <h1>Falha na redefinição de senha</h1>
+        <p>O link de redefinição de senha era inválido, possivelmente porque já foi usado. Solicite uma nova redefinição de senha.</p>
+        {% endif %}
+    </div>
+    {% endblock %}
+    ```
+
+</details>
+
+<details><summary><b>Password Reset Done</b></summary>
+
+- **Password Reset Done**
+    
+    ***accounts/templates/registration/password_reset_done.html***
+    
+    ```html
+    {% extends 'base.html' %}
+    
+    {% block title %}Reset Ok{% endblock %}
+    
+    {% block content %}
+    <div class="col-md-4">
+        <h2>Solicitação de Senha Nova</h2>
+        <p>Enviamos um e-mail com instruções para definir sua senha. Se eles não chegarem em alguns minutos, verifique sua pasta de spam.</p>
+    </div>
+    {% endblock %}
+    ```
+
+</details>
+
+<details><summary><b>Password Reset Complete</b></summary>
+
+- **Password Reset Complete**
+    
+    ***accounts/templates/registration/password_reset_complete.html***
+    
+    ```html
+    {% extends 'base.html' %}
+    {% block title %}Reset de Senha Completo{% endblock %}
+    {% block content %}
+    <div class="col-md-4">
+      <h3>Sua senha foi alterada com sucesso!</h3>
+      <p><a href="{% url 'login' %}">Fazer Login</a></p>
+    </div>
+    {% endblock %}
+    ```
+
+</details> 
+
+<details><summary><b>Register</b></summary>
+
+- **Register** 
+    
+    *accounts/admin.py*
     
     ```python
-    import os 
+    from django.contrib.auth.models import User
+    from django.contrib.auth import forms
     
-    # base_dir config
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    TEMPLATE_DIR = os.path.join(BASE_DIR,'templates')
-    STATIC_DIR=os.path.join(BASE_DIR,'static')
-    
-    # Database
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'), 
-        }
-    }
-    
-    STATIC_ROOT = os.path.join(BASE_DIR,'static')
-    STATIC_URL = '/static/' 
-    
-    MEDIA_ROOT=os.path.join(BASE_DIR,'media')
-    MEDIA_URL = '/media/'
-    
-    # Internationalization
-    # Se quiser deixar em PT BR
-    LANGUAGE_CODE = 'pt-br'
-    TIME_ZONE = 'America/Sao_Paulo'
-    USE_I18N = True
-    USE_L10N = True
-    USE_TZ = True
+    # Register your models here.
+    class CustomUserCreationForm(forms.UserCreationForm):
+        class Meta(forms.UserCreationForm.Meta):
+            model = User
+            fields = forms.UserCreationForm.Meta.fields + ('email','first_name','last_name',)
+            
+        def __init__(self, *args, **kwargs): # Adiciona 
+            super().__init__(*args, **kwargs)  
+            for field_name, field in self.fields.items():   
+                field.widget.attrs['class'] = 'form-control'
     ```
     
-    *myapp*/*urls.py*
+    *accounts/views.py*
     
     ```python
-    from django.contrib import admin
-    from django.conf import settings
-    from django.conf.urls.static import static
-    from django.urls import path
+    from django.shortcuts import render, redirect
+    from .admin import CustomUserCreationForm
+    from django.contrib import messages
+    
+    # Create your views here.
+    def register(request):
+            form = CustomUserCreationForm()
+            if request.method == "POST":
+                form = CustomUserCreationForm(request.POST)
+        
+                if form.is_valid():
+                    user = form.save(commit=False)
+                    user.is_valid = False
+                    user.save()
+                    messages.success(request, 'Registrado. Agora faça o login para começar!')
+                    return redirect('index')
+    
+                else:
+                    print('invalid registration details')
+                    
+            return render(request, "registration/register.html",{"form": form})
+    
+    ```
+    
+    *core/urls.py*
+    
+    ```python
+    from accounts import views
     
     urlpatterns = [
-        path('admin/', admin.site.urls),
-    ]
-    
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) # Adicionar Isto
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # Adicionar Isto
-    ```
-
-</details>
-
-<details><summary><b>Variáveis de Ambiente</b></summary>
-
-- **Variáveis de Ambiente**
-    
-    
-    Para configurar variáveis de ambiente vamos utilizar biblioteca ***python-dotenv.** Existem outras concorrentes, mas eu gosto de usar o python-dotenv.* 
-    
-    **Alternativas:**
-    
-    - [Honcho](https://github.com/nickstenning/honcho)
-    - [django-dotenv](https://github.com/jpadilla/django-dotenv)
-    - [django-environ](https://github.com/joke2k/django-environ)
-    - [django-environ-2](https://github.com/sergeyklay/django-environ-2)
-    - [django-configuration](https://github.com/jezdez/django-configurations)
-    - [dump-env](https://github.com/sobolevn/dump-env)
-    - [environs](https://github.com/sloria/environs)
-    - [dynaconf](https://github.com/rochacbruno/dynaconf)
-    - [parse_it](https://github.com/naorlivne/parse_it)
-    
-    Link: [https://pypi.org/project/python-dotenv/](https://pypi.org/project/python-dotenv/)
-    
-    “*Python-dotenv lê pares chave-valor de um `.env`arquivo e pode defini-los como variáveis de ambiente. Ajuda no desenvolvimento de aplicações seguindo os princípios dos [12 fatores](http://12factor.net/)”*
-    
-    Da uma olhada nos 12 fatores é interessante.
-    
-    Vamos lá. Primeiramente vamos instalar essa biblioteca na aplicação.
-    
-    **`pip install python-dotenv`**
-    
-    Feito isso vamos criar um arquivo chamado **“.env”**. 
-    
-    Nesse arquivo vamos colocar as variáveis importantes como ***senha do banco de dados, secret_key do django, api_key, chave cloud*** tudo que tem credenciais.
-    
-    Exemplo:
-    
-    ```python
-    ## Não precisa colocar "" aspas
-    SECRET_KEY=django-insecure-q(ge$586x7o9n)3w+6d_^t(m!ib&9%_m8&6@=m=sy@^7qf)#*_
-    DEBUG=True
-    SUPER_USER=ADMIN
-    EMAIL=leticiateste@gmail.com
-    
-    NAME_DB=db.sqlite3
-    USER_DB=root
-    PASSWORD_DB=
-    HOST_DB=localhost
-    PORT_DB=3306
-    
-    EMAIL_HOST = 'smtp.office365.com' 
-    EMAIL_HOST_USER = 'email@hotmail.com' 
-    EMAIL_HOST_PASSWORD = 'sua senha' 
-    EMAIL_PORT = 587 
-    EMAIL_USE_TLS = True 
-    DEFAULT_FROM_EMAIL = 'email@hotmail.com'
-    SERVER_EMAIL = DEFAULT_FROM_EMAIL
+    	  ...
+        path('register/', views.register, name='register'),
+    		...
+    ] 
     ```
     
-    Sempre envio um arquivo exemplo **(sem as informações reais)** como esse exemplo “**_env**” no *commit*. Assim quando eu abaixo o repositório eu preencho somente as informações e renomeio o arquivo para “.**env**”. Lembrando o arquivo “.**env**” não vai nos *commits*. Essa informação deve estar no .*gitignore*. Caso for um servidor real ai você cria esse arquivo no servidor.  
+    *accounts/templates/register.html*
     
-    Feito isso pessoal. Vamos configurar no **core/settings.py**
+    ```html
+    {% extends 'base.html' %}
     
-    É assim que chamamos as variáveis.
+    {% block title %}Registrar{% endblock %}
     
-    ```python
-    # importar a biblioteca
-    from dotenv import load_dotenv
-    
-    # adicionar essa tag para que nosso projeto encontre o .env
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
-    
-    # chamar as variaveis assim
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    
-    DEBUG = os.getenv('DEBUG')
-    
-    DATABASES = {
-      'default': {
-          'ENGINE': 'django.db.backends.sqlite3',
-          'NAME': os.path.join(BASE_DIR, os.getenv('NAME_DB')),
-    			#'USER':os.getenv('USER_DB')
-    			#'PASSWORD': os.getenv('PASSWORD_DB')
-    			#'HOST':os.getenv('HOST_DB')
-    			#'PORT':os.getenv('PORT_DB')
-    
-    	}
-    }
-    
-    # Se tiver configuração de email
-    EMAIL_HOST = os.getenv('EMAIL_HOST')
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') 
-    EMAIL_PORT = os.getenv('EMAIL_PORT') 
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') 
-    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-    SERVER_EMAIL = DEFAULT_FROM_EMAIL
-    
-    ```
-
-</details>
-
-<details><summary><b>CORS HEADERS</b></summary>
-
-- **CORS HEADERS**
-    
-    Para configurar os Cors Headers precisamos instalar uma biblioteca.
-    
-    [https://pypi.org/project/django-cors-headers/](https://pypi.org/project/django-cors-headers/)
-    
-    *“Adicionar cabeçalhos CORS permite que seus recursos sejam acessados em outros domínios. É importante que você entenda as implicações antes de adicionar os cabeçalhos, pois você pode estar abrindo involuntariamente os dados privados do seu site para outras pessoas.”* 
-    
-    Instalar a Biblioteca na nossa aplicação
-    
-    **`pip install django-cors-headers`**
-    
-    ```python
-    from corsheaders.defaults import default_headers
-    ```
-    
-    ```python
-    # Adicionar no settings.py
-    INSTALLED_APPS = [
-        ...,
-        "corsheaders",
-        ...,
-    ]
-    ```
-    
-    ```
-    MIDDLEWARE = [
-        ...,
-        "corsheaders.middleware.CorsMiddleware",
-    		"django.middleware.common.CommonMiddleware",
-        ...,
-    ]
-    ```
-    
-    ```python
-    ALLOWED_HOSTS = [ 
-    		'localhost', 
-    		'127.0.0.1',  
-    ]
-    
-    CORS_ALLOW_HEADERS = list(default_headers) + [
-        	'X-Register',
-    ]
-    
-    # CORS Config
-    CORS_ORIGIN_ALLOW_ALL = True
-    CORS_ALLOW_CREDENTIALS = False
-    ```
-    
-    SSL and Cookies Vamos deixar configurado tambem. No final do video vamos fazer deploy.
-    doc: [https://docs.djangoproject.com/en/4.1/ref/settings/](https://docs.djangoproject.com/en/4.1/ref/settings/)
-    
-    ```python
-    if not DEBUG:
-    	SECURE_SSL_REDIRECT = True
-    	ADMINS = [(os.getenv('SUPER_USER'), os.getenv('EMAIL'))]
-    	SESSION_COOKIE_SECURE = True
-    	CSRF_COOKIE_SECURE = True
-    ```
-
-</details>
-
-<details><summary><b>LOGS</b></summary>    
-
-- **LOGS**
-    
-    
-    Vamos configurar os Logs.
-    
-    Precisamos Instalar essa biblioteca.
-    
-    Documentação: [https://pypi.org/project/django-requestlogs/](https://pypi.org/project/django-requestlogs/)
-    
-    **`pip install django-requestlogs`**
-    
-    Adicionar no ***core/settings.py***
-    
-    ```
-    MIDDLEWARE = [
-        ...
-        'requestlogs.middleware.RequestLogsMiddleware',
-    ]
-    ```
-    
-    ```
-    REST_FRAMEWORK={
-        ...
-        'EXCEPTION_HANDLER': 'requestlogs.views.exception_handler',
-    }
-    ```
-    
-    Documentação: [https://docs.djangoproject.com/en/4.1/topics/logging/#topic-logging-parts-loggers](https://docs.djangoproject.com/en/4.1/topics/logging/#topic-logging-parts-loggers)
-    
-    ```python
-    # Logs
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'requestlogs_to_file': {
-                'level': 'INFO',
-                'class': 'logging.FileHandler',
-                'filename': 'info.log',
-            },
-        },
-        'loggers': {
-            'requestlogs': {
-                'handlers': ['requestlogs_to_file'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-        },
-    }
-    
-    REQUESTLOGS = {
-        'SECRETS': ['password', 'token'],
-        'METHODS': ('PUT', 'PATCH', 'POST', 'DELETE'),
-    }
-    ```
-
-</details>
-
-<details><summary><b>Timeout</b></summary>
-
-- **Timeout**
-    
-    Vamos utilizar a biblioteca D**jango Session Timeout:**
-    
-    doc: [https://pypi.org/project/django-session-timeout/](https://pypi.org/project/django-session-timeout/)
-    
-    Instalar Biblioteca.
-    
-    **`pip install django-session-timeout`**
-    
-    ```python
-    MIDDLEWARE_CLASSES = [
-        # ...
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django_session_timeout.middleware.SessionTimeoutMiddleware',
-        # ...
-    ]
-    ```
-    
-    ```python
-    # timeout tempo de inatividate no sistema
-    SESSION_EXPIRE_SECONDS = 1800 
-    SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
-    #SESSION_EXPIRE_AFTER_LAST_ACTIVITY_GRACE_PERIOD = 60  
-    SESSION_TIMEOUT_REDIRECT = 'http://localhost:8000/'
-    ```
-    
-    ```python
-    LOGIN_URL = 'login'
-    LOGIN_REDIRECT_URL = '/'
-    LOGOUT_REDIRECT_URL = '/'
+    {% block content %} 
+    <div class="col-md-4">
+        <h4>Criar uma conta</h4>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-warning mt-3" type="submit">Registrar</button>
+        </form>
+    </div>
+    {% endblock %}
     ```
 </details>
 
-<details><summary><b>Arquivo Context Processors</b></summary>
+Esses templates que to colocando podem ser customizados como você quiser. Só ficar atento nos identificadores dos formulários que não podem mudar.
 
-- **Arquivo Context Processors**
-    
-    
-    Essa configuração permite criar um contexto Global no seu projeto. Assim você pode chamar esse contexto em qualquer aplicativo do seu projeto.
-    
-    Primeiro criar um arquivo ***context_processors.py*** na pasta do seu projeto.
-    
-    ```python
-    # from myapp import models
-    
-    def context_social(request):
-        return {'social': 'Exibir este contexto em qualquer lugar!'}
-    ```
-    
-    Ai precisamos registar as funções aqui.
-    
-    ```python
-    TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
-            'APP_DIRS': True,
-            'OPTIONS': {
-                'context_processors': [
-                    'django.template.context_processors.debug',
-                    'django.template.context_processors.request',
-                    'django.contrib.auth.context_processors.auth',
-                    'django.contrib.messages.context_processors.messages',
-                    # Apps
-                    'core.context_processors.context_social', 
-                ],
-            },
-        },
-    ]
-    ```
-    
-    Feito essa configuração o contexto “social” se torna Global no seu projeto. Assim você pode chamado em qualquer aplicativo do seu projeto.
-</details>
+Feito isso, Podemos testar. Basta adicionar as rotas no seu template HTML para chamar a view.
 
-<details><summary><b>Aplicativo Base (templates, statics)</b></summary>    
+Estou em um projeto teste então eu adicionei esses botões
 
-- **Aplicativo Base (templates, statics)**
+```python
+<a class="btn btn-outline-danger" href="{% url 'logout' %}">Sair</a>
+<a class="btn btn-outline-primary" href="{% url 'login' %}">Entrar</a>
+<a class="btn btn-success" href="{% url 'register' %}">Registrar</a>
+<a href="{% url 'password_reset' %}">Esqueci minha senha</a>
+```
+
+<details><summary><b>Base</b></summary>
+
+- **Base**
     
-    
-    **Vamos criar nosso aplicativo base no Django.**
-    
-    Aplicação *base* vamos deixar os arquivos base que é utilizado no projeto inteiro. Como templates e arquivos statics como css, js e até images estáticas.
-    
-    ```python
-    python manage.py startapp base
-    ```
-    
-    Agora precisamos registrar nossa aplicação no *INSTALLED_APPS* localizado em *settings.py*.
-    
-    Apos criar app base pode criar as pastas nessa estrutura. 
-    
-    1- pasta ***“templates”*** dentro dela colocar **base.html** (vazia por enquanto)
-    
-    2 - pasta ***“static”*** dentro dela criar pastas **css, image, js.** Cria os arquivos, style.css e javascript.js.
-    
-    ## Template Base
-    
-    1 - No arquivo ***base.html*** colocar esse template. 
-    
-    É aqui que vamos renderizar nosso conteúdo. Para não ter que repetir esse template em todas as paginas que criarmos, então fazemos um base e utilizamos *extends* para usar nos outros templates.
-    
-    *base/templates/base.html*
-    
-    ```python
+    ```html
     {% load static %}
     <!DOCTYPE html>
     <html lang="en">
@@ -462,136 +352,83 @@ Esse é o padrão de configuração de projeto que utilizo.
     </head>
     <body>  
     	
-    	{% block content %}
-    	
-    	{% endblock %} 
+    	{% include 'navbar.html' %}
      
+    	
+    	<div class="container"> 
+    	 
+    		{% if user.is_authenticated %}
+    			<h1>Olá, {{user.username}}</h1>  
+    		{% endif %} 
+    			 
+    		{% block content %}{% endblock %} 
+    	</div>
+    
     	<!-- JS-->
+    	<script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    
     	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    	
     	<script src="{% static 'js/scripts.js' %}"></script>
+    
+    	{% block scripts %}{% endblock scripts %} 
+    
     </body>
     </html>
     ```
 </details>
 
-<details><summary><b>Django Message</b></summary>    
+<details><summary><b>Navbar</b></summary>
 
-- **Django Message**
+- **Navbar**
     
-    
-    **Configura mensagem.**
-    
-    Documentação: [https://docs.djangoproject.com/en/4.1/ref/contrib/messages/](https://docs.djangoproject.com/en/4.1/ref/contrib/messages/)
-    
-    Nossa biblioteca tem essas configurações de mensagens ativas. Que funciona perfeitamente, mas precisamos renderizar isso no *frontend*. Como estamos utilizando *bootstrap* precisamos adicionar essa configuração no *settings.py* do seu projeto. Adicionando essa configuração as mensagens de alerta aparecerá com as classes do bootstrap.
-    
-    ***core/settings.py***
-    
-    ```python
-    # --- Messages --- #
-    from django.contrib.messages import constants
-    
-    MESSAGE_TAGS = {
-    	constants.ERROR: 'alert-danger',
-    	constants.WARNING: 'alert-warning',
-    	constants.DEBUG: 'alert-info',
-    	constants.SUCCESS: 'alert-success',
-    	constants.INFO: 'alert-info',
-    }
-    ```
-    
-    ***base/templates/message.html***
-    
-    ```python
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div {% if message.tags %} class="alert {{ message.tags }}"{% endif %} role="alert">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    ```
-    
-    Adiciona na base
-    
-    ```python
-    <body> 
-    	{% include 'message.html' %} ## adiciona isso.
-    	{% block content %}
-    	{% endblock %} 
-    </body>
-    ```
-
-</details>
-
-<details><summary><b>Criando Aplicativo</b></summary>    
-
-- **Criando Aplicativo** 
-
-    **Vamos criar nosso aplicativo no Django.**
-    
-    Para criar a aplicação no Django rode comando abaixo. “myapp” é nome do seu **Aplicativo**.
-    
-    ```python
-    python manage.py startapp myapp
-    ```
-    
-    Agora precisamos registrar nossa aplicação no *INSTALLED_APPS* localizado em *settings.py*.
-    
-    *myapp*/*templates*/*index.html*
+    Tenho uma navbar.html para adicioanr no projeto base.
     
     ```html
-    {% extends 'base.html' %}
-    {% block title %}Pagina 1{% endblock %}
-    {% block content %}
-    	<h1>Pagina 1</h1>
-    	<p>Testando o context Global</p>
-    	<p>{{social}}</p>
-    {% endblock %}
+    <nav class="navbar navbar-expand-lg border-bottom">
+    
+        <div class="container-fluid">
+    
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo03"
+                aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    
+            <a class="navbar-brand" href="#">Myapp</a>
+    
+            <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+    
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+    
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/">Inicio</a>
+                    </li> 
+    
+                    <li class="nav-item">
+                        <a class="nav-link disabled">Desativado</a>
+                    </li>
+    
+                </ul>
+    
+                <div class="d-flex gap-3 align-items-center">
+                    {% if user.is_authenticated %}
+                        <span class="nav-text">
+                            {{user.username}}
+                        </span>
+                        <a class="btn btn-outline-danger" href="{% url 'logout' %}">Sair</a>
+                    {% else %}
+                        <a class="btn btn-outline-primary" href="{% url 'login' %}">Entrar</a>
+                        <a class="btn btn-success" href="{% url 'register' %}">Registrar</a>
+                    {% endif %} 
+    
+                </div>
+               
+            </div>
+    
+        </div>
+    
+    </nav>
     ```
-    
-    *myapp*/*views.py*
-    
-    ```python
-    from django.shortcuts import render
-    
-    # Create your views here.
-    def index(request):
-        return render(request, 'index.html')
-    ```
-    
-    criar arquivo *myapp*/*urls.py*
-    
-    ```
-    from django.urls import path 
-    from myapp import views
-    
-    urlpatterns = [
-        path('', views.index, name='index'), 
-    ]
-    ```
-    
-    urls.py do projeto. ***core/urls.py***
-    
-    ```python
-    from django.contrib import admin
-    from django.urls import path, include # adicionar include
-    from django.conf import settings
-    from django.conf.urls.static import static 
-    
-    urlpatterns = [
-        path('admin/', admin.site.urls),
-        path('', include('myapp.urls')), # url do app
-    ]
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) # Adicionar Isto
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # Adicionar Isto
-    ```
-    
-    Rodar o projeto para ver como está.
-    
-    ```python
-    python manage.py makemigrations && python manage.py migrate
-    python manage.py runserver
-    ```
+</details>    
 
-</details>
+**Esse é um jeito simples**. Se você precisa de algo Customizável ai pode ser utilizado o exemplo completo que tem na documentação do Django. De criar as views, forms, customizar os fields.
