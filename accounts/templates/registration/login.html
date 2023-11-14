@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<div class="col-md-4">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label" for="id_username" style="color: #4B0082;">Usuário:</label>
+            <input type="text" name="username" class="form-control" style="border-color: #4B0082;">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label" for="id_password" style="color: #4B0082;">Senha:</label>
+            <input type="password" name="password" class="form-control" style="border-color: #4B0082;">
+        </div>
+
+        <button class="btn btn-warning" type="submit" style="background-color: #FFD700; border-color: #FFD700;">Entrar</button>
+    </form>
+    
+    <a href="{% url 'password_reset' %}" style="color: #87CEEB;">Esqueci minha senha</a>
+</div>
+
+{% endblock %}
