@@ -1,4 +1,4 @@
-<!-- templates/paginas/adicionar_pontos.html -->
+<!-- templates/clientes/adicionar_pontos.html -->
 {% extends "paginas/modelo.html" %}
 
 {% load static %}
@@ -15,7 +15,7 @@
   <div class="container" >
 
     <h1>Adicionar Pontos</h1>
-      <form method="get" action="{% url 'paginas:adicionar_pontos' %}">
+      <form method="get" action="{% url 'clientes:adicionar_pontos' %}">
         <label for="search_query">Buscar Cliente por Nome ou CPF:</label>
         <input type="text" id="search_query" name="search_query" required>
         <button type="submit">Buscar</button>
@@ -25,7 +25,7 @@
       <h2>Cliente Encontrado</h2>
         <p>Nome: {{ cliente.nome }}</p>
         <p>CPF: {{ cliente.cpf }}</p>
-        <form method="post" action="{% url 'paginas:adicionar_pontos' cliente.id %}">
+        <form method="post" action="{% url 'clientes:adicionar_pontos' cliente.id %}">
           {% csrf_token %}
           <label for="valor_adicionar">Valor a Adicionar:</label>
           <input type="text" id="valor_adicionar" name="valor_adicionar" required>
@@ -33,5 +33,5 @@
         </form>
     {% endif %}
   </div>
-  {% comment %} <a href="{% url 'paginas:index' %}">Voltar para a página inicial</a> {% endcomment %}
-  {% endblock conteudo %}
+  {% comment %} <a href="{% url 'clientes:index' %}">Voltar para a página inicial</a> {% endcomment %}
+{% endblock conteudo %}

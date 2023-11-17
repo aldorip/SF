@@ -1,7 +1,7 @@
 from django.urls import path
 
-from .views import (AdicionarClienteView, AdicionarPontosView, ClientesView,
-                    IndexView)
+from .views import (AddPontosView, AdicionarClienteView, AdicionarPontosView,
+                    ClientesView, IndexView)
 
 app_name = 'paginas'
 urlpatterns = [
@@ -14,5 +14,8 @@ urlpatterns = [
 
     path('add__pontos/<int:cliente_id>/',
          AdicionarPontosView.as_view(), name='adicionar_pontos'),
+
+    path('add_pontos/',
+         AddPontosView.as_view(), name='add_pontos'),
 
 ]

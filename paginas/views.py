@@ -18,8 +18,50 @@ class ClientesView(View):
     template_name = 'paginas/clientes.html'
 
     def get(self, request):
+        termo_busca = request.GET.get('termo_busca', '')
+        clientes_encontrados = self.buscar_clientes(termo_busca)
+        return render(request, self.template_name, {'clientes_encontrados': clientes_encontrados, 'termo_busca': termo_busca})
+
+    def post(self, request):
+        termo_busca = request.POST.get('termo_busca', '')
+        clientes_encontrados = self.buscar_clientes(termo_busca)
+        return render(request, self.template_name, {'clientes_encontrados': clientes_encontrados, 'termo_busca': termo_busca})
+
+    def buscar_clientes(self, termo_busca):
+        if termo_busca:
+            clientes = Cliente.objects.filter(
+                nome__icontains=termo_busca) | Cliente.objects.filter(cpf__icontains=termo_busca)
+        else:
+            clientes = Cliente.objects.all()
+
+        return clientes
+
+    def get(self, request):
         paginas = Cliente.objects.all()
         return render(request, self.template_name, {'paginas': paginas})
+
+
+class AddPontosView(View):
+    template_name = 'paginas/add_pontos.html'
+
+    def get(self, request):
+        termo_busca = request.GET.get('termo_busca', '')
+        clientes_encontrados = self.buscar_clientes(termo_busca)
+        return render(request, self.template_name, {'clientes_encontrados': clientes_encontrados, 'termo_busca': termo_busca})
+
+    def post(self, request):
+        termo_busca = request.POST.get('termo_busca', '')
+        clientes_encontrados = self.buscar_clientes(termo_busca)
+        return render(request, self.template_name, {'clientes_encontrados': clientes_encontrados, 'termo_busca': termo_busca})
+
+    def buscar_clientes(self, termo_busca):
+        if termo_busca:
+            clientes = Cliente.objects.filter(
+                nome__icontains=termo_busca) | Cliente.objects.filter(cpf__icontains=termo_busca)
+        else:
+            clientes = Cliente.objects.all()
+
+        return clientes
 
 
 class AdicionarClienteView(View):
