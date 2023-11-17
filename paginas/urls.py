@@ -1,9 +1,18 @@
 from django.urls import path
 
-from .views import PaginaInicial, SobreView
+from .views import (AdicionarClienteView, AdicionarPontosView, ClientesView,
+                    IndexView)
 
+app_name = 'paginas'
 urlpatterns = [
-    path('', PaginaInicial.as_view(), name='inicio'),
-    path('sobre/', SobreView.as_view(), name='sobre'),
+    path('', IndexView.as_view(), name='inicio'),
+
+    path('adicionar_cliente/', AdicionarClienteView.as_view(),
+         name='adicionar_cliente'),
+    path('clientes/', ClientesView.as_view(),
+         name='clientes'),
+
+    path('add__pontos/<int:cliente_id>/',
+         AdicionarPontosView.as_view(), name='adicionar_pontos'),
 
 ]

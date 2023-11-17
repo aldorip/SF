@@ -1,0 +1,22 @@
+<!-- templates/paginas/adicionar_cliente.html -->
+{% extends "paginas/modelo.html" %}
+
+{% load static %}
+
+{% block titulo %}
+    <title>Adicionar paginas</title>
+{% endblock titulo %}
+
+{% block conteudo %}
+  <div class="container" >
+    <h1>Adicionar Cliente</h1>
+    <form method="post" action="{% url 'paginas:adicionar_cliente' %}">
+      {% csrf_token %}
+      <label for="nome">Nome do Cliente:</label>
+      <input type="text" id="nome" name="nome" required>
+      <label for="cpf">CPF:</label>
+      <input type="text" id="cpf" name="cpf" required>
+      <button type="submit">Adicionar Cliente</button>
+    </form>
+  </div>
+{% endblock conteudo %}

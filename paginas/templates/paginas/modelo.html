@@ -21,7 +21,14 @@
     {% block menu  %}
 
     <div class="bg-light">
-        Código do menu
+        <a href="{% url 'paginas:inicio' %}">HOME</a>
+        <br>
+        <a href="{% url 'paginas:clientes' %}">Lista de clientes</a>
+        <br>
+        <a href="{% url 'paginas:adicionar_cliente' %}"> Adicionar Cliente</a>
+        {% comment %} <a href="{% url 'paginas:adicionar_pontos' %}">Adicionar Pontos</a> {% endcomment %}
+        
+        
     </div>
 
     {% endblock menu %}
@@ -29,9 +36,10 @@
     
     {% block destaque %}
     
-    <div class="bg-secondary">
-        
-        figuras do site
+    <div>
+        <center>
+        <img src="{% static "img/logo_acai.png" %}" alt="" width="200" height="200">
+        </center>
 
     </div>
 

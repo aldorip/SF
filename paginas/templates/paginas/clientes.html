@@ -1,0 +1,35 @@
+<!-- templates/paginas/home.html -->
+{% extends "paginas/modelo.html" %}
+
+{% load static %}
+
+{% block titulo %}
+    <title>Clientes</title>
+{% endblock titulo %}
+
+{% block conteudo %}
+    <div class="container" >
+        <center>
+    
+        <a href="{% url 'paginas:adicionar_cliente' %}">Adicionar clientes</a>
+        {% comment %} <a href="{% url 'paginas:adicionar_pontos' %}">Adicionar Pontos</a> {% endcomment %}
+            
+        <h1>Clientes</h1>
+    <ul>
+        {% for cliente in paginas %}
+            <li>
+                {{ cliente.nome }} - CPF: {{ cliente.cpf }} - Pontos: {{ cliente.pontos }} - Saldo: R$ {{ cliente.saldo|floatformat:2 }}
+                <form method="post" action="{% url 'paginas:adicionar_pontos' cliente.id %}">
+                    {% csrf_token %}
+                    <label for="valor_adicionar">Adicionar valor:</label>
+                    <input type="text" id="valor_adicionar" name="valor_adicionar" required>
+                    <button type="submit">Adicionar Pontos</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+
+        </center>
+    </div>
+{% endblock conteudo %}
